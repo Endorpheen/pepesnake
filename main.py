@@ -63,6 +63,10 @@ class Food:
 
 # Инициализация PyGame
 pygame.init()
+pygame.mixer.init()  # Инициализация микшера звуков
+
+# Загрузка звукового файла
+eat_sound = pygame.mixer.Sound("/home/end0/CODE/lesson-9/obozhrusja-i-pomru-molodoj.mp3")  # Замените на путь к вашему звуковому файлу
 
 # Настройка окна
 screen_width = 1200
@@ -112,6 +116,7 @@ while running:
     snake.move()
     if snake.head.colliderect(pygame.Rect(food.position[0], food.position[1], block_size, block_size)):
         snake.size += 1
+        eat_sound.play()  # Воспроизведение звука
         food.generate_position(screen_width, screen_height)
 
     # Отрисовка
