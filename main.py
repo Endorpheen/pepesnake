@@ -74,21 +74,34 @@ class Food:
 class Obstacle:
     def __init__(self, block_size):
         self.block_size = block_size
-        self.size = (5 * block_size, 5 * block_size)  # Размер препятствия (5 на 5 клеток)
+        self.size = (5 * block_size, 5 * block_size)
         self.position = (0, 0)
         self.generate_position(screen_width, screen_height)
-
-        # Загрузка изображения человеческого лица
-        self.image = pygame.image.load("/home/end0/CODE/pepesnake/biden.png")  # Замените "biden.png" на путь к вашему изображению
-        self.image = pygame.transform.scale(self.image, self.size)
 
     def generate_position(self, screen_width, screen_height):
         x = random.randint(0, (screen_width - self.size[0]) // self.block_size) * self.block_size
         y = random.randint(0, (screen_height - self.size[1]) // self.block_size) * self.block_size
-        self.position = (x, y)
+        self.position = (x, y)    
 
+        # Загрузка изображений для анимации препятствий
+        self.images = [
+            pygame.image.load("/home/end0/CODE/pepesnake/biden.png"),
+            pygame.image.load("/home/end0/CODE/pepesnake/biden2.png")
+        ]
+        # Масштабирование изображений до размера препятствия
+        self.images = [pygame.transform.scale(image, self.size) for image in self.images]
+        
+        self.current_frame = 0
+        self.animation_speed = 0.1
+    
     def draw(self, screen):
-        screen.blit(self.image, self.position)                
+        # Отрисовка текущего кадра анимации препятствий
+        screen.blit(self.images[int(self.current_frame)], self.position)
+        
+        # Обновление текущего кадра анимации
+        self.current_frame += self.animation_speed
+        if self.current_frame >= len(self.images):
+            self.current_frame = 0                
 
 # Инициализация PyGame
 pygame.init()
@@ -147,7 +160,7 @@ while True:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
-                elif event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     start_screen = False
                     waiting = False
                     pygame.mixer.music.stop()  # Остановка музыки при запуске игры
@@ -226,7 +239,7 @@ while True:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
-                elif event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     start_screen = True
                     game_over = False
                     snake = Snake(screen_width // 2, screen_height // 2, block_size)
