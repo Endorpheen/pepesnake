@@ -53,19 +53,38 @@ class Snake:
 
 # Класс Food (еда)
 class Food:
-    def __init__(self, block_size):
+    def __init__(self, block_size, obstacles):
         self.block_size = block_size
         self.position = (0, 0)
-        self.generate_position(screen_width, screen_height)
+        self.generate_position(screen_width, screen_height, obstacles)
 
         # Загрузка изображения биткоина
         self.image = pygame.image.load("/home/end0/CODE/pepesnake/bitcoin.png")  # Замените "bitcoin.png" на путь к вашему изображению
         self.image = pygame.transform.scale(self.image, (block_size, block_size))
 
-    def generate_position(self, screen_width, screen_height):
-        x = random.randint(0, (screen_width - self.block_size) // self.block_size) * self.block_size
-        y = random.randint(0, (screen_height - self.block_size) // self.block_size) * self.block_size
-        self.position = (x, y)
+    def generate_position(self, screen_width, screen_height, obstacles):
+        valid_position = False
+        while not valid_position:
+            x = random.randint(0, (screen_width - self.block_size) // self.block_size) * self.block_size
+            y = random.randint(0, (screen_height - self.block_size) // self.block_size) * self.block_size
+            potential_position = (x, y)
+            valid_position = True
+
+            # Проверка расстояния от препятствий
+            for obstacle in obstacles:
+                obstacle_rect = pygame.Rect(obstacle.position[0], obstacle.position[1], obstacle.size[0], obstacle.size[1])
+                food_rect = pygame.Rect(potential_position[0], potential_position[1], self.block_size, self.block_size)
+
+                # Получаем центры прямоугольников
+                obstacle_center = pygame.math.Vector2(obstacle_rect.center)
+                food_center = pygame.math.Vector2(food_rect.center)
+
+                # Вычисляем расстояние между центрами прямоугольников
+                if obstacle_center.distance_to(food_center) < 3 * self.block_size:
+                    valid_position = False
+                    break
+                                                    
+        self.position = potential_position
 
     def draw(self, screen):
         screen.blit(self.image, self.position)
@@ -123,8 +142,8 @@ background_image = pygame.transform.scale(background_image, (screen_width, scree
 # Создание объектов змейки и еды
 block_size = 20
 snake = Snake(screen_width // 2, screen_height // 2, block_size)
-food = Food(block_size)
 obstacles = [Obstacle(block_size) for _ in range(5)]  # Создание 5 препятствий
+food = Food(block_size, obstacles)
 
 # Шрифт для отображения длины змейки и стартового экрана
 font = pygame.font.Font(None, 36)
@@ -189,7 +208,7 @@ while True:
         if snake.head.colliderect(pygame.Rect(food.position[0], food.position[1], block_size, block_size)):
             snake.size += 1
             eat_sound.play()  # Воспроизведение звука
-            food.generate_position(screen_width, screen_height)
+            food.generate_position(screen_width, screen_height, obstacles)
             for obstacle in obstacles:
                 obstacle.generate_position(screen_width, screen_height)
 
@@ -243,7 +262,7 @@ while True:
                     start_screen = True
                     game_over = False
                     snake = Snake(screen_width // 2, screen_height // 2, block_size)
-                    food.generate_position(screen_width, screen_height)
+                    food.generate_position(screen_width, screen_height, obstacles)
                     obstacle.generate_position(screen_width, screen_height)
                     waiting = False
                     pygame.mixer.music.stop()  # Остановка музыки при конце игры        
