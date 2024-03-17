@@ -1,0 +1,35 @@
+Igor,4
+игорь,3
+Коля,3
+эндо,3
+igor,2
+igor ,2
+igor ,2
+igor ,2
+igor df,2
+igor df,2
+igor df,2
+igor d,2
+igor d,2
+igor d,2
+igor d,2
+л,2
+эндорфин,2
+лав,1
+лав,1
+лавsdf,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Igor,1
+Игорь,1
+ я,1

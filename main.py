@@ -122,6 +122,48 @@ class Obstacle:
         if self.current_frame >= len(self.images):
             self.current_frame = 0                
 
+class LeaderBoard:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.scores = self.load_scores()
+
+    def load_scores(self):
+        try:
+            with open(self.file_path, 'r') as file:
+                scores = []
+                for line in file:
+                    line = line.strip()
+                    if line:
+                        parts = line.split(',')
+                        if len(parts) == 2:
+                            name, score = parts
+                            scores.append((name, int(score)))
+                        else:
+                            # Обработка некорректных строк
+                            print(f"Некорректная строка в файле: {line}")
+        except FileNotFoundError:
+            scores = []
+        return sorted(scores, key=lambda x: x[1], reverse=True)
+
+    def save_scores(self):
+        with open(self.file_path, 'w') as file:
+            for name, score in self.scores:
+                file.write(f"{name},{score}\n")
+
+    def add_score(self, name, score):
+        self.scores.append((name, score))
+        self.scores.sort(key=lambda x: x[1], reverse=True)
+        self.save_scores()
+
+    def draw(self, screen, font):
+        leaderboard_text = font.render("Таблица лидеров:", True, (255, 255, 255))
+        screen.blit(leaderboard_text, (10, 60))
+        y = 100
+        for i, (name, score) in enumerate(self.scores[:8], start=1):
+            score_text = font.render(f"{i}. {name}: {score}", True, (255, 255, 255))
+            screen.blit(score_text, (10, y))
+            y += 40
+
 # Инициализация PyGame
 pygame.init()
 pygame.mixer.init()  # Инициализация микшера звуков
@@ -159,6 +201,7 @@ clock = pygame.time.Clock()
 running = True
 start_screen = True
 game_over = False
+leaderboard = LeaderBoard("/home/end0/CODE/pepesnake/scores.txt") # Создание объекта таблицы лидеров
 
 while True:
     # Отображение стартового экрана
@@ -231,41 +274,84 @@ while True:
 
         pygame.display.flip()
 
-# Экран конца игры
+        # Экран конца игры
     if game_over:
         screen.fill((0, 0, 0))
-
-        # Загрузка изображения лица человека
-        face_image = pygame.image.load("/home/end0/CODE/pepegametest/trump-face.png")  # Замените "trump-face.png" на путь к вашему изображению
+        # Загрузка и отображение изображения лица человека
+        face_image = pygame.image.load("/home/end0/CODE/pepegametest/trump-face.png")
         face_image = pygame.transform.scale(face_image, (200, 200))
         face_rect = face_image.get_rect(center=(screen_width // 2, screen_height // 2 - 100))
         screen.blit(face_image, face_rect)
 
+        # Отображение текста конца игры и создателя
         game_over_text = font.render(f"Конец игры, ваш счет: {snake.size}", True, (255, 255, 255))
         text_rect = game_over_text.get_rect(center=(screen_width // 2, screen_height // 2 + 50))
         screen.blit(game_over_text, text_rect)
-
         created_by_text = font.render("Created by end0", True, (255, 255, 255))
         created_by_rect = created_by_text.get_rect(center=(screen_width // 2, screen_height - 50))
         screen.blit(created_by_text, created_by_rect)
 
+        # Отображение запроса на ввод имени
+        name_text = font.render("Введите ваше имя:", True, (255, 255, 255))
+        name_rect = name_text.get_rect(center=(screen_width // 2, screen_height // 2 + 150))
+        screen.blit(name_text, name_rect)
         pygame.display.flip()
 
-        # Ожидание нажатия любой клавиши для перезапуска игры
-        waiting = True
-        while waiting:
+        # Инициализация переменной для имени игрока
+        name = ""
+        enter_pressed = False
+
+        # Цикл ввода имени игрока
+        while not enter_pressed:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
-                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    start_screen = True
-                    game_over = False
-                    snake = Snake(screen_width // 2, screen_height // 2, block_size)
-                    food.generate_position(screen_width, screen_height, obstacles)
-                    obstacle.generate_position(screen_width, screen_height)
-                    waiting = False
-                    pygame.mixer.music.stop()  # Остановка музыки при конце игры        
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        enter_pressed = True
+                        leaderboard.add_score(name, snake.size)
+                    elif event.key == pygame.K_BACKSPACE:
+                        name = name[:-1]
+                    else:
+                        name += event.unicode
+                    # Отображение текущего вводимого имени
+                    screen.fill((0, 0, 0))  # Очищаем экран
+                    # Повторно отображаем все элементы, так как экран очищен
+                    screen.blit(face_image, face_rect)
+                    screen.blit(game_over_text, text_rect)
+                    screen.blit(created_by_text, created_by_rect)
+                    screen.blit(name_text, name_rect)
+                    # Отображаем введенное имя
+                    name_surface = font.render(name, True, (255, 255, 255))
+                    screen.blit(name_surface, (screen_width // 2 - name_surface.get_width() // 2, screen_height // 2 + 200))
+                    pygame.display.flip()
+        
+        # Отрисовка списка лидеров
+        screen.fill((0, 0, 0))  # Очистка экрана для отрисовки списка лидеров
+        # ... [код отрисовки фона и текста, если необходимо] ...
+        leaderboard.draw(screen, font)  # Отрисовка списка лидеров
+        pygame.display.flip()
+
+        # Ожидание действия пользователя для выхода с экрана списка лидеров
+        waiting_for_user_to_proceed = True
+        while waiting_for_user_to_proceed:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    waiting_for_user_to_proceed = False
+                    pygame.quit()
+                    quit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    waiting_for_user_to_proceed = False
+
+        # Перезапуск игры
+        start_screen = True
+        game_over = False
+        snake = Snake(screen_width // 2, screen_height // 2, block_size)
+        food.generate_position(screen_width, screen_height, obstacles)
+        for obstacle in obstacles:
+            obstacle.generate_position(screen_width, screen_height)
+        pygame.mixer.music.stop()  # Остановка музыки при конце игры
 
 # Выход из PyGame
-pygame.quit()
+#    pygame.quit()
